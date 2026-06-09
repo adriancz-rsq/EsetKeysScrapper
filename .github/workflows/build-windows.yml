@@ -14,18 +14,22 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 'a1f18b1b1146e8b1a3d58f27e1b7f3d8a3e5c5f5'
-        runVcpkgInstall: false
-
-    - name: Install all dependencies via vcpkg
+    - name: Setup vcpkg manually
+      shell: pwsh
       run: |
-        vcpkg integrate install
-        vcpkg install qt6-base:x64-windows openssl:x64-windows curl:x64-windows nlohmann-json:x64-windows
+        cd C:\
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg
+        .\bootstrap-vcpkg.bat
+
+    - name: Install dependencies via vcpkg
+      shell: pwsh
+      run: |
+        C:\vcpkg\vcpkg.exe integrate install
+        C:\vcpkg\vcpkg.exe install qt6-base:x64-windows openssl:x64-windows curl:x64-windows nlohmann-json:x64-windows
 
     - name: Configure CMake
+      shell: pwsh
       run: |
         cmake -B build `
           -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
@@ -36,9 +40,8 @@ jobs:
         cmake --build build --config Release
 
     - name: Deploy Qt DLLs
-      shell: powershell
+      shell: pwsh
       run: |
-        # Znajdź ścieżkę do windeployqt
         $windeployqt = Get-ChildItem -Path "C:/vcpkg/installed/x64-windows/tools" -Recurse -Filter "windeployqt.exe" | Select-Object -First 1 -ExpandProperty FullName
         if ($windeployqt) {
           & $windeployqt --release build/Release/EsetKeys.exe
