@@ -3,9 +3,6 @@ name: Build Windows EXE
 on:
   workflow_dispatch:
 
-env:
-  QT_VERSION: "6.6.0"
-
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -17,32 +14,22 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install Qt via aqtinstall
-      run: |
-        pip install aqtinstall
-        aqt install-qt windows desktop ${{ env.QT_VERSION }} win64_msvc2022_64
-
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
       with:
         vcpkgGitCommitId: 'a1f18b1b1146e8b1a3d58f27e1b7f3d8a3e5c5f5'
         runVcpkgInstall: false
 
-    - name: Install dependencies via vcpkg
+    - name: Install all dependencies via vcpkg
       run: |
         vcpkg integrate install
-        vcpkg install openssl:x64-windows curl:x64-windows nlohmann-json:x64-windows
+        vcpkg install qt6-base:x64-windows openssl:x64-windows curl:x64-windows nlohmann-json:x64-windows
 
     - name: Configure CMake
       run: |
         cmake -B build `
           -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
-          -DCMAKE_PREFIX_PATH="C:/Qt/${{ env.QT_VERSION }}/msvc2022_64"
+          -DVCPKG_TARGET_TRIPLET=x64-windows
 
     - name: Build Project
       run: |
@@ -51,7 +38,11 @@ jobs:
     - name: Deploy Qt DLLs
       shell: powershell
       run: |
-        C:\Qt\${{ env.QT_VERSION }}\msvc2022_64\bin\windeployqt.exe --release build/Release/EsetKeys.exe
+        # Znajdź ścieżkę do windeployqt
+        $windeployqt = Get-ChildItem -Path "C:/vcpkg/installed/x64-windows/tools" -Recurse -Filter "windeployqt.exe" | Select-Object -First 1 -ExpandProperty FullName
+        if ($windeployqt) {
+          & $windeployqt --release build/Release/EsetKeys.exe
+        }
         Copy-Item -Path "C:/vcpkg/installed/x64-windows/bin/*.dll" -Destination "build/Release/" -Force
 
     - name: Upload Artifact
