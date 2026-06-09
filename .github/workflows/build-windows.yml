@@ -5,28 +5,29 @@ on:
 
 env:
   QT_VERSION: "6.6.0"
-  QT_MODULES: "qtbase"
 
 jobs:
   build-windows:
     runs-on: windows-latest
+    
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Qt (Manual)
-      shell: pwsh
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Qt via aqtinstall
       run: |
-        # Pobieranie Qt Online Installer
-        $installerUrl = "https://download.qt.io/official_releases/online_installers/qt-online-installer-windows-x86_64-4.7.0.exe"
-        Invoke-WebRequest -Uri $installerUrl -OutFile "qt-installer.exe"
-        
-        # Alternatywnie: użyj aqtinstall (Python tool)
         pip install aqtinstall
-        aqt install-qt windows desktop $env:QT_VERSION win64_msvc2022_64 -m $env:QT_MODULES
-        aqt install-tool windows desktop tools_qtcreator
-        
+        aqt install-qt windows desktop ${{ env.QT_VERSION }} win64_msvc2022_64 -m qtbase
+      continue-on-error: false
+
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
       with:
