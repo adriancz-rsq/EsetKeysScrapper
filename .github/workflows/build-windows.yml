@@ -26,7 +26,7 @@ jobs:
       shell: pwsh
       run: |
         C:\vcpkg\vcpkg.exe integrate install
-        C:\vcpkg\vcpkg.exe install qt6-base:x64-windows openssl:x64-windows curl:x64-windows nlohmann-json:x64-windows
+        C:\vcpkg\vcpkg.exe install qtbase:x64-windows openssl:x64-windows curl:x64-windows nlohmann-json:x64-windows
 
     - name: Configure CMake
       shell: pwsh
@@ -52,4 +52,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: EsetKeys-Windows-Release
-        path: build/Release/
+        path: build/
