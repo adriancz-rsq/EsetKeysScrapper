@@ -25,8 +25,7 @@ jobs:
     - name: Install Qt via aqtinstall
       run: |
         pip install aqtinstall
-        aqt install-qt windows desktop ${{ env.QT_VERSION }} win64_msvc2022_64 -m qtbase
-      continue-on-error: false
+        aqt install-qt windows desktop ${{ env.QT_VERSION }} win64_msvc2022_64
 
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v11
