@@ -1,0 +1,52 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch: # Pozwala uruchomić to ręcznie z zakładki Actions
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.7.0' # Możesz zmienić na najnowszą dostępną wersję 6.x
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2022_64'
+        modules: 'qtbase'
+
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgGitCommitId: 'latest'
+        runVcpkgInstall: false
+
+    - name: Install dependencies via vcpkg
+      run: |
+        vcpkg integrate install
+        vcpkg install openssl:x64-windows curl:x64-windows nlohmann-json:x64-windows
+
+    - name: Configure CMake
+      run: |
+        cmake -B build -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=${{ env.Qt6_DIR }}
+
+    - name: Build Project
+      run: |
+        cmake --build build --config Release
+
+    - name: Deploy Qt DLLs
+      run: |
+        ${{ env.Qt6_DIR }}/bin/windeployqt.exe --release build/Release/EsetKeys.exe
+        # Kopiujemy też DLL-e z vcpkg do folderu z exe
+        Copy-Item -Path "C:/vcpkg/installed/x64-windows/bin/*.dll" -Destination "build/Release/" -Force
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: EsetKeys-Windows-Release
+        path: build/Release/
